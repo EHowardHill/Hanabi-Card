@@ -1,0 +1,28 @@
+main:
+  do:
+    - for:
+      var: i
+      from: 1
+      to: 1
+      do:
+        - write:
+          const: "Counting: "
+        - print:
+          var: i
+  - while:
+      condition:
+        - lessThan:
+            - var: counter
+            - const: 10
+      do:
+        - write:
+          const: "Counter is "
+        - print:
+            var:
+              counter
+        - set:
+          var: counter 
+          value: 
+            - add:
+              var: counter
+              value: 1

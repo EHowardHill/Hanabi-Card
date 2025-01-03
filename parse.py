@@ -1,95 +1,93 @@
 import yaml
 import random
+from typing import Any, Dict, List, Union
 
+# Define type aliases
+CodeType = List[Union[str, Dict[str, Any]]]
+ParametersType = Dict[str, Any]
+FunctionType = Dict[str, Any]
+SchemaType = Dict[str, Any]
+
+# Read and parse the YAML file
 with open("example.yaml", "r", encoding="utf-8") as f:
-    text = f.read()
+    text: str = f.read()
 
-schema = yaml.load(text, Loader=yaml.FullLoader)
+schema: SchemaType = yaml.load(text, Loader=yaml.FullLoader)
 
-data = schema.get("data", {})
-functions = schema.get("functions", {})
+data: Dict[str, Any] = schema.get("data", {})
+functions: Dict[str, FunctionType] = schema.get("functions", {})
 
-def run(main):
-    params = main.get("parameters", None)
-    code = main.get("code")
+def run(main: Dict[str, Any]) -> Any:
+    params: Union[None, ParametersType] = main.get("parameters", None)
+    code: CodeType = main.get("code", [])
+    
+    return_value: Any = None
+    exec_line: int = 0
 
-    return_value = None
-    exec_line = 0
     while exec_line < len(code):
-        line = code[exec_line]
+        line: Union[str, Dict[str, Any]] = code[exec_line]
   
         if isinstance(line, str):
-            key = line
+            key: str = line
         else:
             key = list(line.keys())[0]
 
         if key == "set":
-            var = line.get("set", {}).get("var")
-            value = run(
-                {"parameters": {}, "code": line.get("set", {}).get("value")}
-            )
+            var: str = line.get("set", {}).get("var", "")
+            value: Any = run({"parameters": {}, "code": line.get("set", {}).get("value", [])})
             data[var] = value
 
         elif key == "print":
             print(line.get("print"))
 
         elif key == "input":
-            var = line.get("input", {}).get("var")
+            var: str = line.get("input", {}).get("var", "")
             data[var] = input()
 
         elif key == "if":
-            condition = run({"code": line.get("if", {}).get("condition")})
+            condition: bool = run({"code": line.get("if", {}).get("condition", [])})
             if condition:
-                run({"parameters": {}, "code": line.get("if", {}).get("then")})
+                run({"parameters": {}, "code": line.get("if", {}).get("then", [])})
             else:
-                run({"parameters": {}, "code": line.get("if", {}).get("else")})
+                run({"parameters": {}, "code": line.get("if", {}).get("else", [])})
 
         elif key == "return":
-
             if "var" in line.get("return", {}):
-                return data[line.get("return", {}).get("var")]
+                return data[line.get("return", {}).get("var", "")]
             elif "const" in line.get("return", {}):
-                return line.get("return", {}).get("const")
+                return line.get("return", {}).get("const", "")
             else:
                 return return_value
 
         elif key == "equal":
-            line.get("equal", [])[0]
-            value1 = run({"code": [line.get("equal", [])[0]]}) 
-            value2 = run({"code": [line.get("equal", [])[1]]})
-            if value1 == value2:
-                return True
-            else:
-                return False
+            value1: Any = run({"code": [line.get("equal", [])[0]]})
+            value2: Any = run({"code": [line.get("equal", [])[1]]})
+            return value1 == value2
 
         elif key == "greater":
-            line.get("greater", [])[0]
-            value1 = run({"code": [line.get("greater", [])[0]]}) 
-            value2 = run({"code": [line.get("greater", [])[1]]})
-            if value1 > value2:
-                return True
-            else:
-                return False
+            value1: Any = run({"code": [line.get("greater", [])[0]]})
+            value2: Any = run({"code": [line.get("greater", [])[1]]})
+            return value1 > value2
             
         elif key == "var":
             return data[line.get("var", "")]
-        
+
         elif key == "const":
             return line.get("const", "")
 
         elif key == "random":
-            m1 = line.get("random", {}).get("min", {})
-            m2 = line.get("random", {}).get("max", {})
+            m1: int = line.get("random", {}).get("min", 0)
+            m2: int = line.get("random", {}).get("max", 0)
             return random.randint(m1, m2)
         
         elif key == "int":
             return int(run({"code": line.get("int", [])}))
 
         elif key == "end":
-            exit
+            exit()
 
         elif key in functions:
-            run(functions.get(key, [])) 
+            run(functions.get(key, {}))
 
         exec_line += 1
 

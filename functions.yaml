@@ -1,0 +1,54 @@
+
+include:
+  - test.yaml
+
+myList:
+  - 3
+  - 10
+
+addNumbers:
+  params:
+    - a
+    - b
+  do:
+    - return:
+        - add:
+            - a
+            - b
+
+main:
+  do:
+    - addNumbers:
+      - 5
+      - 10
+
+    - append:
+        var: myList
+        value: 6
+    - remove:
+        var: myList
+        value: 3
+    - sort:
+        var: myList
+
+    - set:
+        var: result
+        value:
+          - multiply:
+              - var: num1
+              - var: num2
+
+    - set:
+        var: greeting
+        value:
+          - concat:
+            - const: "Hello, "
+            - var: name
+
+    - writeFile:
+        path: "output.txt"
+        const: "Hello, world!"
+
+    - readFile:
+        path: "input.txt"
+        var: content

@@ -1,54 +1,53 @@
-functions:
+nextGuess:
+  do:
+    - print:
+      - const: "What is your guess?"
 
-  nextGuess:
-    code:
-      - print: "What is your guess?"
+    # Collects input, converts it to int
+    - input:
+        var: guess
+    - set:
+        var: guess
+        value:
+          - int:
+              - var: guess
+    
+    - if:
+        condition:
+          - equal:
+              - var: guess
+              - var: secretNumber
 
-      # Collects input, converts it to int
-      - input:
-          var: guess
-      - set:
-          var: guess
-          value:
-            - int:
-                - return:
-                    var: guess
-      
-      - if:
-          condition:
-            - equal:
-                - return:
-                    var: guess
-                - return:
-                    var: secretNumber
+        then:
+          - print:
+            - const: "You got it right!"
+          - end
 
-          then:
-            - print: "You got it right!"
-            - end
-          else:
-            - if:
-                condition:
-                  - greater:
-                      - return:
-                          var: guess
-                      - return:
-                          var: secretNumber
-                then:
-                  - print: "Too high! Try again."
-                  - nextGuess
-                else:
-                  - print: "Too low! Try again."
-                  - nextGuess
+        else:
+          - if:
+              condition:
+                - greaterThan:
+                    - var: guess
+                    - var: secretNumber
+              then:
+                - print:
+                  - const: "Too high! Try again."
+                - nextGuess
+              else:
+                - print:
+                  - const: "Too low! Try again."
+                - nextGuess
 
-  main:
-    code:
-      # Set up initial value
-      - set:
-          var: secretNumber
-          value:
-            - random:
-                min: 0
-                max: 100
+main:
+  do:
+    # Set up initial value
+    - set:
+        var: secretNumber
+        value:
+          - random:
+              min: 0
+              max: 100
 
-      - print: "I'm thinking of a number between 1 and 10."
-      - nextGuess
+    - print:
+      - const: "I'm thinking of a number between 1 and 10."
+    - nextGuess
