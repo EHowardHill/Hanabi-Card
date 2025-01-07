@@ -8,8 +8,8 @@ LDFLAGS = -static -lyaml-cpp -static-libgcc -static-libstdc++ -flto
 all: hanabi
 
 # Build the 'main' executable
-hanabi: parse.cpp
-	$(CXX) $(CXXFLAGS) parse.cpp -o hanabi $(LDFLAGS)
+hanabi: src/parse.cpp
+	$(CXX) $(CXXFLAGS) src/parse.cpp -o hanabi $(LDFLAGS)
 
 # Clean up generated files
 clean:

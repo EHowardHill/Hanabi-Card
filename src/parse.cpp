@@ -1,10 +1,13 @@
 #include <iostream>
 #include <fstream>
+#include <exception>
 #include <string>
 #include <map>
 #include <vector>
 #include <any>
 #include <random>
+#include <filesystem>
+#include <unordered_map>
 #include <yaml-cpp/yaml.h>
 
 using namespace std;
@@ -15,6 +18,49 @@ using FunctionType = Node;
 
 static map<string, any> g_data;
 static map<string, FunctionType> g_functions;
+
+string getFileStem(const string& filePath)
+{
+    return filesystem::path(filePath).stem().string();
+}
+
+void loadSchema(const string& filePath, Node& root, bool isRoot)
+{
+    // Load the file
+    Node doc = LoadFile(filePath);
+
+    // Process includes first
+    if (doc["include"])
+    {
+        for (const auto& inc : doc["include"])
+        {
+            string includePath = inc.as<string>();
+            // Recursively load includes
+            loadSchema(includePath, root, false /* definitely not root */);
+        }
+    }
+
+    // Now merge the rest of the data
+    // We'll rename if we're NOT the root file
+    string stem = getFileStem(filePath);
+
+    for (auto it = doc.begin(); it != doc.end(); ++it)
+    {
+        string funcName = it->first.as<string>();
+        if (!isRoot)
+        {
+            // Prepend filename stem plus a dot
+            string newName = stem + "." + funcName;
+            cout << "name: " << newName << endl;
+            root[newName] = it->second;
+        }
+        else
+        {
+            // Keep the function name as is, if this is the root
+            root[funcName] = it->second;
+        }
+    }
+}
 
 string anyToString(const any &val)
 {
@@ -336,17 +382,23 @@ any run(const Node &mainNode)
 }
 
 // Main program entry
-int main(int argc, char *argv[])
+int main(int argc, char* argv[])
 {
     try
     {
-        // Load the YAML file
-        Node schema = LoadFile(argv[1]);
+        if (argc < 2)
+        {
+            cerr << "Usage: " << argv[0] << " <yaml-file>\n";
+            return 1;
+        }
 
-        // Extract "data" and store into g_data
+        // 1) Load and merge everything into one big "schema" node
+        Node schema;
+        loadSchema(argv[1], schema, true /* isRoot */);
+
+        // 2) Extract "data" into g_data
         if (schema["data"])
         {
-            // If "data" has simple key-value pairs
             for (auto it = schema["data"].begin(); it != schema["data"].end(); ++it)
             {
                 string key = it->first.as<string>();
@@ -354,16 +406,20 @@ int main(int argc, char *argv[])
             }
         }
 
-        // Extract "functions" and store them
-        for (auto it = schema.begin(); it != schema.end(); ++it)
+        // 3) Extract "functions" into g_functions
+        if (schema["functions"])
         {
-            string funcName = it->first.as<string>();
-            Node funcNode = it->second;
-            g_functions[funcName] = funcNode;
+            for (auto it = schema["functions"].begin(); it != schema["functions"].end(); ++it)
+            {
+                string funcName = it->first.as<string>();
+                Node funcNode = it->second;
+                g_functions[funcName] = funcNode;
+            }
         }
 
-        // Finally, run the "main" function
-        // This presumes schema["functions"]["main"] exists
+        // 4) Finally, run the "main" function
+        //    Because the root file keeps its functions as-is, it should still be "main" in the root file
+        //    (unless you intentionally changed it).
         if (g_functions.find("main") != g_functions.end())
         {
             run(g_functions["main"]);

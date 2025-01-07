@@ -1,0 +1,30 @@
+meta:
+  name: "My Cool App"
+  start: main
+
+data:
+  mainButtonText: "Click This Button"
+
+styles:
+- default:
+  background-color: black
+  color: white
+
+pages:
+  main:
+    style: default
+    elements:
+    - label:
+        value:
+          const: Is this working?
+    - button:
+        id: mainButton
+        value:
+          data: mainButtonText
+        onclick: updateButton
+
+actions:
+- updateButton:
+  set:
+    target: mainButtonText
+    value: "This is how the state looks after you change it"

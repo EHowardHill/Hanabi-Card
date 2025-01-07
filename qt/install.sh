@@ -1,0 +1,1 @@
+sudo apt-get install libyaml-cpp-dev qtcreator qtbase5-dev qt5-qmake cmake
